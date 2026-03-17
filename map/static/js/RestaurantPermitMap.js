@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
 
@@ -63,6 +63,21 @@ export default function RestaurantPermitMap() {
       })
   }, [year])
 
+  const {totalPermits, maxNumPermits} = useMemo(()=>{
+    return currentYearData.reduce(
+      (stats, communityArea) => {
+        const permits = communityArea.num_permits || 0
+
+        stats.totalPermits += permits
+        stats.maxNumPermits = Math.max(stats.maxNumPermits, permits)
+
+        return stats
+      },
+      { totalPermits: 0, maxNumPermits:0}
+    )
+
+  }, [currentYearData])
+
 
   function getColor(percentageOfPermits) {
     /**
@@ -95,11 +110,11 @@ export default function RestaurantPermitMap() {
       )}
       <YearSelect filterVal={year} setFilterVal={setYear} />
       <p className="fs-4">
-        Restaurant permits issued this year: {/* TODO: display this value */}
+        Restaurant permits issued this year: {totalPermits}
       </p>
       <p className="fs-4">
         Maximum number of restaurant permits in a single area:
-        {/* TODO: display this value */}
+        {maxNumPermits}
       </p>
       <MapContainer
         id="restaurant-map"
@@ -114,7 +129,7 @@ export default function RestaurantPermitMap() {
           <GeoJSON
             data={RAW_COMMUNITY_AREAS}
             onEachFeature={setAreaInteraction}
-            // key={maxNumPermits}
+            key={maxNumPermits}
           />
         ) : null}
       </MapContainer>
