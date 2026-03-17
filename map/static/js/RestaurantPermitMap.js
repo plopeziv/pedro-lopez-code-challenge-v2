@@ -41,18 +41,27 @@ export default function RestaurantPermitMap() {
 
   const [currentYearData, setCurrentYearData] = useState([])
   const [year, setYear] = useState(2026)
+  const [error, setError] = useState(null)
 
   const yearlyDataEndpoint = `/map-data/?year=${year}`
 
   useEffect(() => {
-    fetch()
-      .then((res) => res.json())
-      .then((data) => {
-        /**
-         * TODO: Fetch the data needed to supply to map with data
-         */
+    fetch(yearlyDataEndpoint)
+      .then((res) => {
+        if(!res.ok){
+          throw new Error(`Failed to fetch data for year ${year} (status: ${res.status})`)
+        }
+        return res.json()
       })
-  }, [yearlyDataEndpoint])
+      .then((data) => {
+        setCurrentYearData(data)
+        setError(null)
+      })
+      .catch((error) => {
+        console.log(error.message)
+        setError(error.message)
+      })
+  }, [year])
 
 
   function getColor(percentageOfPermits) {
@@ -79,6 +88,11 @@ export default function RestaurantPermitMap() {
 
   return (
     <>
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
       <YearSelect filterVal={year} setFilterVal={setYear} />
       <p className="fs-4">
         Restaurant permits issued this year: {/* TODO: display this value */}
@@ -100,7 +114,7 @@ export default function RestaurantPermitMap() {
           <GeoJSON
             data={RAW_COMMUNITY_AREAS}
             onEachFeature={setAreaInteraction}
-            key={maxNumPermits}
+            // key={maxNumPermits}
           />
         ) : null}
       </MapContainer>
