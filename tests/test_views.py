@@ -28,7 +28,6 @@ def community_areas():
 class TestMapDataView:
     def get_num_permits_by_name(self, response):
         data = response.json()
-        print(response.json())
         return {item["name"]: item["num_permits"] for item in data}
     
     def test_returns_permit_counts_for_selected_year(self, create_permit):
@@ -74,3 +73,23 @@ class TestMapDataView:
         data_by_name = self.get_num_permits_by_name(response)
 
         assert data_by_name["Beverly"] == 0
+
+    def test_returns_permit_counts_for_all_years_when_year_is_not_provided(
+        self, create_permit
+    ):
+        beverly = CommunityArea.objects.create(name="Beverly", area_id=1)
+
+        create_permit(beverly, 2021, 1, 15)
+        create_permit(beverly, 2025, 2, 20)
+        create_permit(beverly, 2026, 3, 10)
+
+
+        client = APIClient()
+        response = client.get(reverse("map_data"))
+
+
+        assert response.status_code == 200
+
+        data_by_name = self.get_num_permits_by_name(response)
+
+        assert data_by_name["Beverly"] == 3

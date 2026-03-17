@@ -14,8 +14,6 @@ class CommunityAreaSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         year = request.query_params.get("year") if request else None
 
-        print("YEAR:", year)
-
         permits = RestaurantPermit.objects.filter(
             community_area_id=str(obj.area_id)
         )
