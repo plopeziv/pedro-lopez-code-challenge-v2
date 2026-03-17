@@ -78,12 +78,21 @@ export default function RestaurantPermitMap() {
 
   }, [currentYearData])
 
+  const permitsByCommunity = useMemo(() => {
+    return currentYearData.reduce((permitsByCommunity, communityAreaData) => {
+      permitsByCommunity[communityAreaData.name] = communityAreaData.num_permits || 0
+      return permitsByCommunity
+    }, {})
+
+  }, [currentYearData])
+
 
   function getColor(percentageOfPermits) {
-    /**
-     * TODO: Use this function in setAreaInteraction to set a community 
-     * area's color using the communityAreaColors constant above
-     */
+    const colorIndex = Math.min(
+      communityAreaColors.length - 1,
+      Math.floor(percentageOfPermits * communityAreaColors.length)
+    )
+    return communityAreaColors[colorIndex]
   }
 
   function setAreaInteraction(feature, layer) {
@@ -94,7 +103,15 @@ export default function RestaurantPermitMap() {
      * 2) On hover, display a popup with the community area's raw 
      * permit count for the year
      */
-    layer.setStyle()
+    const community = feature.properties.community
+    const communityPermits = permitsByCommunity[community] || 0
+    const communityPermitPercentage = communityPermits/maxNumPermits
+    const fillColor = getColor(communityPermitPercentage)
+
+    layer.setStyle({
+      fillColor: fillColor,
+      fillOpacity: 0.65,
+    })
     layer.on("", () => {
       layer.bindPopup("")
       layer.openPopup()
