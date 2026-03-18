@@ -15,15 +15,6 @@ def create_permit():
         )
     return _create_permit
 
-@pytest.fixture
-def community_areas():
-    beverly = CommunityArea.objects.create(name="Beverly", area_id=1)
-    lincoln_park = CommunityArea.objects.create(name="Lincoln Park", area_id=2)
-    return {
-        "beverly": beverly,
-        "lincoln_park": lincoln_park,
-    }
-
 @pytest.mark.django_db
 class TestMapDataView:
     def get_num_permits_by_name(self, response):
@@ -32,7 +23,6 @@ class TestMapDataView:
     
     def test_returns_permit_counts_for_selected_year(self, create_permit):
         # Arrange
-        # Create some test community areas
         beverly = CommunityArea.objects.create(name="Beverly", area_id="1")
         lincoln_park = CommunityArea.objects.create(name="Lincoln Park", area_id="2")
 
@@ -43,14 +33,12 @@ class TestMapDataView:
         create_permit(lincoln_park, 2021, 2, 14)
         create_permit(lincoln_park, 2021, 6, 22)
 
-        # Noise: wrong year
         create_permit(lincoln_park, 2025, 4, 6)
 
-        # Query the map data endpoint
         client = APIClient()
 
         #Act
-        response = client.get(reverse("map_data", query={"year": 2021}))
+        response = client.get(reverse("map_data"), {"year": 2021})
 
         # Assert
         assert response.status_code == 200
