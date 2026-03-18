@@ -48,6 +48,30 @@ class TestMapDataView:
         assert data_by_name["Beverly"] == 2
         assert data_by_name["Lincoln Park"] == 3
 
+    def test_returns_zero_permits_for_year_outside_ui_filter_range(self, create_permit):
+        beverly = CommunityArea.objects.create(name="Beverly", area_id="1")
+        lincoln_park = CommunityArea.objects.create(name="Lincoln Park", area_id="2")
+
+        create_permit(beverly, 2021, 1, 15)
+        create_permit(beverly, 2023, 2, 20)
+
+        create_permit(lincoln_park, 2021, 3, 10)
+        create_permit(lincoln_park, 2020, 2, 14)
+        create_permit(lincoln_park, 2019, 6, 22)
+
+        client = APIClient()
+
+
+        response = client.get(reverse("map_data"), {"year": 2015})
+
+
+        assert response.status_code == 200
+
+        data_by_name = self.get_num_permits_by_name(response)
+
+        assert data_by_name["Beverly"] == 0
+        assert data_by_name["Lincoln Park"] == 0
+
     def test_returns_zero_when_area_has_no_permits_for_year(self):
         CommunityArea.objects.create(name="Beverly", area_id=1)
 
