@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
 
@@ -7,7 +7,6 @@ import "leaflet/dist/leaflet.css"
 import RAW_COMMUNITY_AREAS from "../../../data/raw/community-areas.geojson"
 
 function YearSelect({ setFilterVal }) {
-  // Filter by the permit issue year for each restaurant
   const startYear = 2026
   const years = [...Array(11).keys()].map((increment) => {
     return startYear - increment
@@ -41,51 +40,103 @@ export default function RestaurantPermitMap() {
 
   const [currentYearData, setCurrentYearData] = useState([])
   const [year, setYear] = useState(2026)
+  const [error, setError] = useState(null)
 
   const yearlyDataEndpoint = `/map-data/?year=${year}`
 
   useEffect(() => {
-    fetch()
-      .then((res) => res.json())
-      .then((data) => {
-        /**
-         * TODO: Fetch the data needed to supply to map with data
-         */
+    fetch(yearlyDataEndpoint)
+      .then((res) => {
+        if(!res.ok){
+          throw new Error(`Failed to fetch data for year ${year} (status: ${res.status})`)
+        }
+        return res.json()
       })
-  }, [yearlyDataEndpoint])
+      .then((data) => {
+        setCurrentYearData(data)
+        setError(null)
+      })
+      .catch((error) => {
+        console.error(error.message)
+        setError(error.message)
+      })
+  }, [year])
+
+  const {totalPermits, maxNumPermits} = useMemo(()=>{
+    return currentYearData.reduce(
+      (stats, communityArea) => {
+        const permits = communityArea.num_permits || 0
+
+        stats.totalPermits += permits
+        stats.maxNumPermits = Math.max(stats.maxNumPermits, permits)
+
+        return stats
+      },
+      { totalPermits: 0, maxNumPermits:0}
+    )
+
+  }, [currentYearData])
+
+  const permitsByCommunityId = useMemo(() => {
+    return currentYearData.reduce((permitsByCommunityId, communityAreaData) => {
+      const communityId = Number(communityAreaData.area_id)
+      permitsByCommunityId[communityId] = communityAreaData.num_permits || 0
+      return permitsByCommunityId
+    }, {})
+
+  }, [currentYearData])
 
 
   function getColor(percentageOfPermits) {
-    /**
-     * TODO: Use this function in setAreaInteraction to set a community 
-     * area's color using the communityAreaColors constant above
-     */
+    const colorIndex = Math.min(
+      communityAreaColors.length - 1,
+      Math.floor(percentageOfPermits * communityAreaColors.length)
+    )
+    return communityAreaColors[colorIndex]
   }
 
   function setAreaInteraction(feature, layer) {
-    /**
-     * TODO: Use the methods below to:
-     * 1) Shade each community area according to what percentage of 
-     * permits were issued there in the selected year
-     * 2) On hover, display a popup with the community area's raw 
-     * permit count for the year
-     */
-    layer.setStyle()
-    layer.on("", () => {
-      layer.bindPopup("")
+    const communityId = feature.properties.area_numbe
+    const communityName = feature.properties.community?.trim() || "Unknown"
+    const communityPermits = permitsByCommunityId[communityId] || 0
+    const normalizedPermitIntensity = maxNumPermits > 0 ? communityPermits / maxNumPermits : 0
+    const fillColor = getColor(normalizedPermitIntensity)
+
+    layer.setStyle({
+      fillColor,
+      fillOpacity: 0.65,
+    })
+    
+    const popupContent = `
+    <strong>${communityName}</strong><br/>
+    Year: ${year}<br/>
+    Restaurant permits: ${communityPermits}
+  `
+
+    layer.bindPopup(popupContent)
+
+    layer.on("mouseover", () => {
       layer.openPopup()
+    })
+
+    layer.on("mouseout", () => {
+      layer.closePopup()
     })
   }
 
   return (
     <>
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
       <YearSelect filterVal={year} setFilterVal={setYear} />
       <p className="fs-4">
-        Restaurant permits issued this year: {/* TODO: display this value */}
+        Restaurant permits issued this year: {totalPermits}
       </p>
       <p className="fs-4">
-        Maximum number of restaurant permits in a single area:
-        {/* TODO: display this value */}
+        Maximum number of restaurant permits in a single area: {maxNumPermits}
       </p>
       <MapContainer
         id="restaurant-map"

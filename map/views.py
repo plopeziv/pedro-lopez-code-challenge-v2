@@ -20,7 +20,7 @@ class MapDataView(APIView):
         serializer = CommunityAreaSerializer(
             community_areas,
             many=True,
-            context={"year": request.query_params.get("year")},
+            context={"request": request},
         )
         return Response(serializer.data)
 
