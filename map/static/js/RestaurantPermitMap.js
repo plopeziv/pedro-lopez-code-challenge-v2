@@ -134,8 +134,7 @@ export default function RestaurantPermitMap() {
         Restaurant permits issued this year: {totalPermits}
       </p>
       <p className="fs-4">
-        Maximum number of restaurant permits in a single area:
-        {maxNumPermits}
+        Maximum number of restaurant permits in a single area: {maxNumPermits}
       </p>
       <MapContainer
         id="restaurant-map"
