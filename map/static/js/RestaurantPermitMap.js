@@ -7,7 +7,6 @@ import "leaflet/dist/leaflet.css"
 import RAW_COMMUNITY_AREAS from "../../../data/raw/community-areas.geojson"
 
 function YearSelect({ setFilterVal }) {
-  // Filter by the permit issue year for each restaurant
   const startYear = 2026
   const years = [...Array(11).keys()].map((increment) => {
     return startYear - increment
@@ -96,25 +95,30 @@ export default function RestaurantPermitMap() {
   }
 
   function setAreaInteraction(feature, layer) {
-    /**
-     * TODO: Use the methods below to:
-     * 1) Shade each community area according to what percentage of 
-     * permits were issued there in the selected year
-     * 2) On hover, display a popup with the community area's raw 
-     * permit count for the year
-     */
     const community = feature.properties.community
     const communityPermits = permitsByCommunity[community] || 0
-    const communityPermitPercentage = communityPermits/maxNumPermits
+    const communityPermitPercentage = maxNumPermits > 0 ? communityPermits / maxNumPermits : 0
     const fillColor = getColor(communityPermitPercentage)
 
     layer.setStyle({
       fillColor: fillColor,
       fillOpacity: 0.65,
     })
-    layer.on("", () => {
-      layer.bindPopup("")
+    
+    const popupContent = `
+    <strong>${community}</strong><br/>
+    Year: ${year}<br/>
+    Restaurant permits: ${communityPermits}
+  `
+
+    layer.bindPopup(popupContent)
+
+    layer.on("mouseover", () => {
       layer.openPopup()
+    })
+
+    layer.on("mouseout", () => {
+      layer.closePopup()
     })
   }
 
