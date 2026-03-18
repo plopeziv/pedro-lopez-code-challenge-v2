@@ -21,6 +21,10 @@ class TestMapDataView:
         data = response.json()
         return {item["name"]: item["num_permits"] for item in data}
     
+    def get_area_data_by_name(self, response):
+        data = response.json()
+        return {item["name"]: item for item in data}
+    
     def test_returns_permit_counts_for_selected_year(self, create_permit):
         # Arrange
         beverly = CommunityArea.objects.create(name="Beverly", area_id="1")
@@ -47,6 +51,21 @@ class TestMapDataView:
 
         assert data_by_name["Beverly"] == 2
         assert data_by_name["Lincoln Park"] == 3
+
+    def test_returns_area_id_in_map_data_response(self, create_permit):
+        beverly = CommunityArea.objects.create(name="Beverly", area_id="24")
+        create_permit(beverly, 2021, 1, 15)
+
+        client = APIClient()
+
+        response = client.get(reverse("map_data"), {"year": 2021})
+
+        assert response.status_code == 200
+
+        data_by_name = self.get_area_data_by_name(response)
+
+        assert data_by_name["Beverly"]["area_id"] == 24
+        assert data_by_name["Beverly"]["num_permits"] == 1
 
     def test_returns_zero_permits_for_year_outside_ui_filter_range(self, create_permit):
         beverly = CommunityArea.objects.create(name="Beverly", area_id="1")

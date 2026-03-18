@@ -77,10 +77,11 @@ export default function RestaurantPermitMap() {
 
   }, [currentYearData])
 
-  const permitsByCommunity = useMemo(() => {
-    return currentYearData.reduce((permitsByCommunity, communityAreaData) => {
-      permitsByCommunity[communityAreaData.name] = communityAreaData.num_permits || 0
-      return permitsByCommunity
+  const permitsByCommunityId = useMemo(() => {
+    return currentYearData.reduce((permitsByCommunityId, communityAreaData) => {
+      const communityId = Number(communityAreaData.area_id)
+      permitsByCommunityId[communityId] = communityAreaData.num_permits || 0
+      return permitsByCommunityId
     }, {})
 
   }, [currentYearData])
@@ -95,8 +96,9 @@ export default function RestaurantPermitMap() {
   }
 
   function setAreaInteraction(feature, layer) {
-    const community = feature.properties.community?.trim()
-    const communityPermits = permitsByCommunity[community] || 0
+    const communityId = feature.properties.area_numbe
+    const communityName = feature.properties.community?.trim() || "Unknown"
+    const communityPermits = permitsByCommunityId[communityId] || 0
     const normalizedPermitIntensity = maxNumPermits > 0 ? communityPermits / maxNumPermits : 0
     const fillColor = getColor(normalizedPermitIntensity)
 
@@ -106,7 +108,7 @@ export default function RestaurantPermitMap() {
     })
     
     const popupContent = `
-    <strong>${community}</strong><br/>
+    <strong>${communityName}</strong><br/>
     Year: ${year}<br/>
     Restaurant permits: ${communityPermits}
   `

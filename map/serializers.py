@@ -6,7 +6,7 @@ from map.models import CommunityArea, RestaurantPermit
 class CommunityAreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityArea
-        fields = ["name", "num_permits"]
+        fields = ["name", "area_id", "num_permits"]
 
     num_permits = serializers.SerializerMethodField()
 
