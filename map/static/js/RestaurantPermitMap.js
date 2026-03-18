@@ -57,7 +57,7 @@ export default function RestaurantPermitMap() {
         setError(null)
       })
       .catch((error) => {
-        console.log(error.message)
+        console.error(error.message)
         setError(error.message)
       })
   }, [year])
@@ -95,13 +95,13 @@ export default function RestaurantPermitMap() {
   }
 
   function setAreaInteraction(feature, layer) {
-    const community = feature.properties.community
+    const community = feature.properties.community?.trim()
     const communityPermits = permitsByCommunity[community] || 0
-    const communityPermitPercentage = maxNumPermits > 0 ? communityPermits / maxNumPermits : 0
-    const fillColor = getColor(communityPermitPercentage)
+    const normalizedPermitIntensity = maxNumPermits > 0 ? communityPermits / maxNumPermits : 0
+    const fillColor = getColor(normalizedPermitIntensity)
 
     layer.setStyle({
-      fillColor: fillColor,
+      fillColor,
       fillOpacity: 0.65,
     })
     
